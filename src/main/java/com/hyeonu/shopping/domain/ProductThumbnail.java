@@ -13,7 +13,7 @@ public class ProductThumbnail {
     private String path;
 
     @Setter
-    private int index;
+    private int imageIndex;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
