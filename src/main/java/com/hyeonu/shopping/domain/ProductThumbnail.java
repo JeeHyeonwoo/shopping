@@ -5,12 +5,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity @Getter
-public class Image {
+public class ProductThumbnail {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Setter
     private String path;
+
+    @Setter
+    private int index;
 
     @ManyToOne
     @JoinColumn(name = "product_id")

@@ -20,7 +20,16 @@ public class OrderInfo {
     private Date orderDate;
 
     @Column(nullable = false)
-    private String address;
+    private String address1;    // 도, 특별시, 광역시
+
+    @Column(nullable = false)
+    private String address2;    // 시, 군, 구
+
+    @Column(nullable = false)
+    private String address3;   // 읍, 면, 동
+
+    @Column(nullable = false)
+    private String addressDetail;   //상세 주소
 
     @ManyToOne
     @JoinColumn(name ="member_id")

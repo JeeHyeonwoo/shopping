@@ -10,28 +10,39 @@ import java.util.List;
 @Entity @Getter
 public class Product {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Setter @Column(nullable = false)
+    @Setter
+    @Column(nullable = false)
     private String name;
 
     @Setter
-    private String info;
-
-    @Setter @Column(nullable = false)
+    @Column(nullable = false)
     private int price;
 
     @Setter @Column(nullable = false)
-    private int amount;
+    private int gender;
+
+    @Setter
+    private int views;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @ManyToOne
+    @JoinColumn(name = "brand_id")
+    private Brand brand;
+
     @OneToMany(mappedBy = "product")
     private List<OrderDetail> orderDetail = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
-    private List<Image> imageList = new ArrayList<>();
+    private List<ProductThumbnail> productThumbnailList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product")
+    private List<ProductDetail> productDetails = new ArrayList<>();
+
 }
