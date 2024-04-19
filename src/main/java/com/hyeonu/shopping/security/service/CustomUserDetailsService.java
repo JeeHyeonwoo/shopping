@@ -1,4 +1,4 @@
-package com.hyeonu.shopping.service;
+package com.hyeonu.shopping.security.service;
 
 import com.hyeonu.shopping.domain.Member;
 import com.hyeonu.shopping.dto.CustomUserDetails;
