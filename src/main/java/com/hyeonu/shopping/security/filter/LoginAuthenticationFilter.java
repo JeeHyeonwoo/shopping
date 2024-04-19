@@ -1,4 +1,4 @@
-package com.hyeonu.shopping.filter;
+package com.hyeonu.shopping.security.filter;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;

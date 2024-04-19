@@ -1,7 +1,10 @@
 package com.hyeonu.shopping.security.config;
 
-import com.hyeonu.shopping.filter.LoginAuthenticationFilter;
-import com.hyeonu.shopping.handler.ApiAuthenticationSuccessHandler;
+import com.hyeonu.shopping.dto.CustomUserDetails;
+import com.hyeonu.shopping.security.filter.JwtAuthFilter;
+import com.hyeonu.shopping.security.filter.LoginAuthenticationFilter;
+import com.hyeonu.shopping.security.handler.ApiAuthenticationSuccessHandler;
+import com.hyeonu.shopping.security.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +14,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
@@ -21,9 +25,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public SecurityConfig(@Autowired AuthenticationConfiguration authenticationConfiguration) {
+    public SecurityConfig(@Autowired final AuthenticationConfiguration authenticationConfiguration,
+                          @Autowired final JwtTokenProvider jwtTokenProvider,
+                          @Autowired final CustomUserDetailsService customUserDetailsService) {
         this.authenticationConfiguration = authenticationConfiguration;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Bean
@@ -47,9 +57,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizeRequest ->
                         authorizeRequest
                                 .requestMatchers("/manager/**").hasRole("manager")
-                                .requestMatchers("/customer/**").hasRole("customer")
+                                .requestMatchers("/customer/**").hasRole("CUSTOMER")
                                 .anyRequest().permitAll()
                 )
+                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Filter 추가.
+                .addFilterBefore(
+                        new JwtAuthFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(
                         this.abstractAuthenticationProcessingFilter(authenticationManager, authenticationSuccessHandler()),
                         UsernamePasswordAuthenticationFilter.class);

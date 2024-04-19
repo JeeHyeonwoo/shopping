@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
 public class JwtTokenProvider {
     private final Key key;
 
@@ -102,6 +103,10 @@ public class JwtTokenProvider {
         } catch (ExpiredJwtException e) {
             return e.getClaims();
         }
+    }
+
+    public String getUsername(String accessToken) {
+        return this.parseClaims(accessToken).get("sub").toString();
     }
 
 }
