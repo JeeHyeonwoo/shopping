@@ -3,6 +3,7 @@ package com.hyeonu.shopping.service;
 import com.hyeonu.shopping.domain.Authority;
 import com.hyeonu.shopping.domain.Member;
 import com.hyeonu.shopping.domain.MemberAuthority;
+import com.hyeonu.shopping.dto.request.BrandApplyRequestDto;
 import com.hyeonu.shopping.dto.request.SignupRequestDto;
 import com.hyeonu.shopping.repository.AuthorityRepository;
 import com.hyeonu.shopping.repository.MemberAuthorityRepository;
@@ -13,9 +14,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
-@Service @Getter @RequiredArgsConstructor
+@Service @RequiredArgsConstructor
 public class MemberService {
 
     private final MemberRepository memberRepository;
@@ -31,29 +34,53 @@ public class MemberService {
         return !password.equals(password2);
     }
 
-    public boolean signup(SignupRequestDto dto) {
+    public boolean userSignup(SignupRequestDto dto, List<String> authList, boolean isNonLocked) {
         try {
-            Member member = memberRepository.save(
-                    new Member(dto.getUsername(),
-                            bCryptPasswordEncoder.encode(dto.getPassword())
-                    )
-            );
+            Member memberBeforeSaving = new Member(
+                    dto.getUsername(),
+                    bCryptPasswordEncoder.encode(dto.getPassword()),
+                    LocalDateTime.now(),
+                    dto.getGender(),
+                    isNonLocked
+                    );
 
-            //test
-            Optional<Authority> authority = authorityRepository.findByRoleName("customer");
-            Authority auth;
-            if (authority.isEmpty()) {
-                auth = new Authority("customer");
-                authorityRepository.save(auth);
-            }else {
-                auth = authority.get();
+            Member member = memberRepository.save(memberBeforeSaving);
+
+            for (String auth : authList) {
+                Authority authority = authorityRepository.findByRoleName(auth).get();
+
+                if (authority == null) {
+                    authority = authorityRepository.save(new Authority(auth));
+                }
+                memberAuthorityRepository.save(new MemberAuthority(member, authority));
             }
-
-            memberAuthorityRepository.save(new MemberAuthority(member, auth));
-
         } catch (Exception e) {
             return false;
         }
         return true;
     }
+
+    public Member brandManagerSignup(BrandApplyRequestDto dto) {
+        Member beforeSaving = new Member(
+                dto.getUsername(),
+                bCryptPasswordEncoder.encode(dto.getPassword()),
+                LocalDateTime.now(),
+                null,
+                true
+        );
+
+        Member member = memberRepository.save(beforeSaving);
+        for (String auth : List.of("ROLE_USER", "ROLE_BRAND")) {
+            Authority authority = authorityRepository.findByRoleName(auth).orElse(null);
+
+            if (authority == null) {
+                authority = authorityRepository.save(new Authority(auth));
+            }
+            memberAuthorityRepository.save(new MemberAuthority(member, authority));
+        }
+
+        return member;
+    }
+
+
 }
