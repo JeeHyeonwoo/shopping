@@ -67,7 +67,6 @@ public class MemberController {
                     .localDateTime(LocalDateTime.now().toString())
                     .path(request.getRequestURI())
                     .message(map)
-                    .Status(409)
                     .build();
         }
 
@@ -76,7 +75,6 @@ public class MemberController {
                 .localDateTime(LocalDateTime.now().toString())
                 .path(request.getRequestURI())
                 .message(map)
-                .Status(200)
                 .build();
     }
 }
