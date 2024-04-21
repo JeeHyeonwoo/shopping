@@ -22,4 +22,5 @@ public class Authority {
     public Authority(String roleName) {
         this.roleName = roleName;
     }
+
 }

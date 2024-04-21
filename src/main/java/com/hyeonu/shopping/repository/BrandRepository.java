@@ -1,2 +1,7 @@
-package com.hyeonu.shopping.repository;public interface BrandRepository {
+package com.hyeonu.shopping.repository;
+
+import com.hyeonu.shopping.domain.Brand;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface BrandRepository extends JpaRepository<Brand, Long> {
 }
