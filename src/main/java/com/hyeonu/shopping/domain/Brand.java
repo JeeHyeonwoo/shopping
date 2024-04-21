@@ -27,6 +27,9 @@ public class Brand {
     @JoinColumn(name= "member_id")
     private Member member;
 
+    @OneToOne(mappedBy = "brand")
+    private BrandRejectionReason brandRejectionReasons;
+
     protected Brand() {
     }
 
