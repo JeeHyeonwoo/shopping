@@ -5,10 +5,13 @@ import com.hyeonu.shopping.security.filter.JwtAuthFilter;
 import com.hyeonu.shopping.security.filter.LoginAuthenticationFilter;
 import com.hyeonu.shopping.security.handler.ApiAuthenticationSuccessHandler;
 import com.hyeonu.shopping.security.service.CustomUserDetailsService;
+import com.hyeonu.shopping.service.RedisUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,13 +30,16 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private final RedisUtils redisUtils;
 
     public SecurityConfig(@Autowired final AuthenticationConfiguration authenticationConfiguration,
                           @Autowired final JwtTokenProvider jwtTokenProvider,
-                          @Autowired final CustomUserDetailsService customUserDetailsService) {
+                          @Autowired final CustomUserDetailsService customUserDetailsService,
+                          @Autowired final RedisUtils redisUtils) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.jwtTokenProvider = jwtTokenProvider;
         this.customUserDetailsService = customUserDetailsService;
+        this.redisUtils = redisUtils;
     }
 
     @Bean
@@ -54,25 +60,27 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequest ->
                         authorizeRequest
-                                .requestMatchers("/manager/**").hasRole("manager")
+                                .requestMatchers("/manager/**").hasRole("MANAGER")
+                                .requestMatchers("/brand/**").hasRole("BRAND")
                                 .requestMatchers("/customer/**").hasRole("CUSTOMER")
                                 .anyRequest().permitAll()
                 )
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Filter 추가.
                 .addFilterBefore(
-                        new JwtAuthFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+                        new JwtAuthFilter(jwtTokenProvider, customUserDetailsService, redisUtils), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(
                         this.abstractAuthenticationProcessingFilter(authenticationManager, authenticationSuccessHandler()),
                         UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
     public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return new ApiAuthenticationSuccessHandler();
+
+        return new ApiAuthenticationSuccessHandler(jwtTokenProvider, redisUtils);
     }
 
 
@@ -80,7 +88,7 @@ public class SecurityConfig {
         final AuthenticationManager authenticationManager,
         final AuthenticationSuccessHandler authenticationSuccessHandler) {
         return new LoginAuthenticationFilter(
-                "/api/login",
+                "/login",
                 authenticationManager,
                 authenticationSuccessHandler
         );
