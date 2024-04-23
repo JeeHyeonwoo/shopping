@@ -3,8 +3,6 @@ package com.hyeonu.shopping.dto;
 
 import com.hyeonu.shopping.domain.Member;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,11 +17,13 @@ import java.util.stream.Collectors;
 public class CustomUserDetails implements UserDetails {
     private String username;
     private String password;
+    private Boolean isNonLocked;
     private List<GrantedAuthority> roles = new ArrayList<>();
 
     public CustomUserDetails(Member member) {
         this.username = member.getUsername();
         this.password = member.getPassword();
+        this.isNonLocked = member.getIsNonLocked();
         this.roles = member.getRoles().stream().map(
                 (role)-> new SimpleGrantedAuthority(
                         role.getAuthority().getRoleName())).collect(Collectors.toList());
@@ -51,7 +51,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return this.isNonLocked;
     }
 
     @Override

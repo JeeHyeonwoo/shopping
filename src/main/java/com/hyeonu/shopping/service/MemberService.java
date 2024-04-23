@@ -5,19 +5,23 @@ import com.hyeonu.shopping.domain.Member;
 import com.hyeonu.shopping.domain.MemberAuthority;
 import com.hyeonu.shopping.dto.request.BrandApplyRequestDto;
 import com.hyeonu.shopping.dto.request.SignupRequestDto;
+import com.hyeonu.shopping.dto.type.RoleType;
 import com.hyeonu.shopping.repository.AuthorityRepository;
 import com.hyeonu.shopping.repository.MemberAuthorityRepository;
 import com.hyeonu.shopping.repository.MemberRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service @RequiredArgsConstructor
 public class MemberService {
 
@@ -26,39 +30,57 @@ public class MemberService {
     private final AuthorityRepository authorityRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public boolean duplicationUsernameCheck(String username) {
-        return memberRepository.findByUsername(username).isPresent();
-    }
 
-    public boolean checkPassword(String password, String password2) {
-        return !password.equals(password2);
-    }
+    @Transactional
+    public boolean userSignup(SignupRequestDto dto) {
+        String roleName = RoleType.USER.getName();
 
-    public boolean userSignup(SignupRequestDto dto, List<String> authList, boolean isNonLocked) {
+        // 패스워드 암호화
+        dto.setPassword(bCryptPasswordEncoder.encode(dto.getPassword()));
+
         try {
-            Member memberBeforeSaving = new Member(
-                    dto.getUsername(),
-                    bCryptPasswordEncoder.encode(dto.getPassword()),
-                    LocalDateTime.now(),
-                    dto.getGender(),
-                    isNonLocked
-                    );
-
-            Member member = memberRepository.save(memberBeforeSaving);
-
-            for (String auth : authList) {
-                Authority authority = authorityRepository.findByRoleName(auth).get();
-
-                if (authority == null) {
-                    authority = authorityRepository.save(new Authority(auth));
-                }
-                memberAuthorityRepository.save(new MemberAuthority(member, authority));
-            }
-        } catch (Exception e) {
+            Member beforeSaving = new Member(dto);
+            Member member = memberRepository.save(beforeSaving);
+            Authority authority = authorityRepository.findByRoleName(roleName).get();
+            MemberAuthority memberAuthority = new MemberAuthority(member, authority);
+            memberAuthorityRepository.save(memberAuthority);
+        }catch (Exception e) {
+            log.error(e.getMessage());
             return false;
         }
+
         return true;
+
     }
+//    public boolean checkPassword(String password, String password2) {
+//        return !password.equals(password2);
+//    }
+
+//    public boolean userSignup(SignupRequestDto dto, List<String> authList, boolean isNonLocked) {
+//        try {
+//            Member memberBeforeSaving = new Member(
+//                    dto.getUsername(),
+//                    bCryptPasswordEncoder.encode(dto.getPassword()),
+//                    LocalDateTime.now(),
+//                    dto.getGender(),
+//                    isNonLocked
+//                    );
+//
+//            Member member = memberRepository.save(memberBeforeSaving);
+//
+//            for (String auth : authList) {
+//                Authority authority = authorityRepository.findByRoleName(auth).get();
+//
+//                if (authority == null) {
+//                    authority = authorityRepository.save(new Authority(auth));
+//                }
+//                memberAuthorityRepository.save(new MemberAuthority(member, authority));
+//            }
+//        } catch (Exception e) {
+//            return false;
+//        }
+//        return true;
+//    }
 
     public Member brandManagerSignup(BrandApplyRequestDto dto) {
         Member beforeSaving = new Member(

@@ -29,30 +29,45 @@ public class MemberController {
     private final BrandService brandService;
 
     @RequestMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody @Valid SignupRequestDto dto, BindingResult result) {
-        StringBuilder errors = new StringBuilder();
+    public ResponseEntity<ApiResponse> signup(HttpServletRequest request,
+                                              @RequestBody @Valid SignupRequestDto dto,
+                                              BindingResult result) {
+        Map<String, Object> message = new HashMap<>();
+        Map<String, String> errorList = new HashMap<>();
+
+        // 유효성 검사 실패시
         if (result.hasErrors()) {
             for(FieldError error: result.getFieldErrors()) {
-                errors.append(error.getField()).append(": ").append(error.getDefaultMessage()).append(", ");
+                errorList.put(error.getField(), error.getDefaultMessage());
             }
-            return ResponseEntity.badRequest().body(errors.toString());
+            message.put("errors", errorList);
+            return ResponseEntity.status(400).body(
+                    ApiResponse.builder()
+                            .localDateTime(LocalDateTime.now().toString())
+                            .path(request.getRequestURI())
+                            .message(message)
+                            .build()
+            );
+        }
+        if (!memberService.userSignup(dto)) {
+            message.put("result", "FAIL");
+            return ResponseEntity.status(400).body(
+                    ApiResponse.builder()
+                            .localDateTime(LocalDateTime.now().toString())
+                            .path(request.getRequestURI())
+                            .message(message)
+                            .build()
+            );
         }
 
-        if (memberService.duplicationUsernameCheck(dto.getUsername())) {
-            errors.append("username: 동일한 아이디가 존재합니다, ");
-            return ResponseEntity.badRequest().body(errors.toString());
-        }
-
-        if (memberService.checkPassword((dto.getPassword()), dto.getCheckPassword())) {
-            errors.append("password: 비밀번호가 동일하지 않습니다,");
-            return ResponseEntity.badRequest().body(errors.toString());
-        }
-
-        if (memberService.userSignup(dto, List.of("ROLE_USER"), true)) {
-            return ResponseEntity.badRequest().body(errors.toString());
-        }
-
-        return ResponseEntity.ok().body("login");
+        message.put("result", "SUCCESS");
+        return ResponseEntity.ok().body(
+                ApiResponse.builder()
+                        .localDateTime(LocalDateTime.now().toString())
+                        .path(request.getRequestURI())
+                        .message(message)
+                        .build()
+        );
     }
 
 
