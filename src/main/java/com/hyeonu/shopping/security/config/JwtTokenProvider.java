@@ -1,6 +1,8 @@
 package com.hyeonu.shopping.security.config;
 
+import com.hyeonu.shopping.dto.CustomUserDetails;
 import com.hyeonu.shopping.security.dto.TokenInfo;
+import com.hyeonu.shopping.security.service.CustomUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -28,14 +30,17 @@ public class JwtTokenProvider {
 
     @Getter private final long accessExpiration;
     @Getter private final long refreshExpiration;
+    private final CustomUserDetailsService userDetailsService;
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
                             @Value("${jwt.access-token.expiration}") long accessExpiration,
-                            @Value("${jwt.refresh-token.expiration}") long refreshExpiration) {
+                            @Value("${jwt.refresh-token.expiration}") long refreshExpiration,
+                            CustomUserDetailsService customUserDetailsService) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessExpiration = accessExpiration;
         this.refreshExpiration = refreshExpiration;
+        this.userDetailsService = customUserDetailsService;
     }
 
     // 유저 정보를 가지고 AccessToken, RefreshToken 을 생성하는 메서드
@@ -48,12 +53,29 @@ public class JwtTokenProvider {
         long now = (new Date()).getTime();
         // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + accessExpiration);
-        String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())
-                .claim("auth", authorities)
-                .setExpiration(accessTokenExpiresIn)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+
+        String username = authentication.getName();
+        CustomUserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        String accessToken;
+
+        if (userDetails.getBrandId() != null) {
+            accessToken = Jwts.builder()
+                    .setSubject(authentication.getName())
+                    .claim("auth", authorities)
+                    .claim("brandId", userDetails.getBrandId())
+                    .setExpiration(accessTokenExpiresIn)
+                    .signWith(key, SignatureAlgorithm.HS256)
+                    .compact();
+        } else {
+            accessToken = Jwts.builder()
+                    .setSubject(authentication.getName())
+                    .claim("auth", authorities)
+                    .setExpiration(accessTokenExpiresIn)
+                    .signWith(key, SignatureAlgorithm.HS256)
+                    .compact();
+        }
+
+
 
         // Refresh Token 생성
         String refreshToken = Jwts.builder()
@@ -117,4 +139,5 @@ public class JwtTokenProvider {
         return this.parseClaims(accessToken).get("sub").toString();
     }
 
+//    public
 }

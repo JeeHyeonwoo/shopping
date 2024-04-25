@@ -3,6 +3,7 @@ package com.hyeonu.shopping.dto;
 
 import com.hyeonu.shopping.domain.Member;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,6 +19,8 @@ public class CustomUserDetails implements UserDetails {
     private String username;
     private String password;
     private Boolean isNonLocked;
+    @Getter
+    private Long brandId;
     private List<GrantedAuthority> roles = new ArrayList<>();
 
     public CustomUserDetails(Member member) {
@@ -27,6 +30,9 @@ public class CustomUserDetails implements UserDetails {
         this.roles = member.getRoles().stream().map(
                 (role)-> new SimpleGrantedAuthority(
                         role.getAuthority().getRoleName())).collect(Collectors.toList());
+        if (member.getBrand() != null) {
+            this.brandId = member.getBrand().getId();
+        }
     }
 
     @Override
