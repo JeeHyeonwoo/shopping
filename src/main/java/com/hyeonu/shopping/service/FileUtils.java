@@ -10,7 +10,7 @@ import java.util.Date;
 
 @Component
 public class FileUtils {
-    @Value("${uploadDir}")
+    @Value("${uploadDir.main}")
     private String uploadDir;
 
     public String upload(MultipartFile file, String subFolderName) throws IOException {
