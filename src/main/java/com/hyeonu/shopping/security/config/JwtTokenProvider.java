@@ -138,6 +138,7 @@ public class JwtTokenProvider {
     public String getUsername(String accessToken) {
         return this.parseClaims(accessToken).get("sub").toString();
     }
-
-//    public
+    public Long getBrandId(String accessToken) {
+        return Long.valueOf(this.parseClaims(accessToken).get("brandId").toString());
+    }
 }
